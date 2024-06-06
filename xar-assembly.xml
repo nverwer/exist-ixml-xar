@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://expath.org/ns/pkg" name="${package-name}" abbrev="${package-abbrev}" version="${project.version}"
+    spec="1.0">
+    <title>${package-title}</title>
+    <author id="rakensi.com">Nico Verwer</author>
+    <website>${project.url}</website>
+    <license>GNU Lesser General Public License, version 2.1</license>
+    <copyright>true</copyright>
+
+    <!-- should be either "application" or "library" -->
+    <type>library</type>
+
+    <status>stable</status>
+
+    <tag>${project.artifactId}</tag>
+    <tag>ixml</tag>
+    <category id="lib">Libraries</category>
+
+    <dependency processor="http://exist-db.org" semver-min="${exist.version}" />
+
+    <!-- Collection inside /db/apps where xar-resources will be copied to -->
+    <!-- See issue #2: This makes the resulting XAR a resource-package instead of a pure library. -->
+    <!-- <target>${package-abbrev}</target> -->
+
+    <!-- includes everything in src/main/xar-resources, README.md, and LICENSE -->
+    <fileSets>
+        <fileSet>
+            <directory>${basedir}</directory>
+            <includes>
+                <include>README.md</include>
+                <include>LICENSE</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${basedir}/src/main/xar-resources</directory>
+        </fileSet>
+    </fileSets>
+
+    <!-- include the XQuery Library Module written in Java (JAR output) from this project -->
+    <dependencySets>
+        <dependencySet>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>${project.artifactId}</artifactId>
+            <version>${project.version}</version>
+        </dependencySet>
+        <dependencySet>
+          <groupId>de.bottlecaps</groupId>
+          <artifactId>markup-blitz</artifactId>
+          <version>${markup-blitz-version}</version>
+        </dependencySet>
+    </dependencySets>
+
+    <!-- register the Java module to eXist-db -->
+    <components>
+        <resource>
+            <public-uri>${rxf.module.namespace}</public-uri>
+            <file>urn:java:class:com.rakensi.${rxf.module.java.classname}</file>
+        </resource>
+    </components>
+
+</package>
