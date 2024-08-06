@@ -7,7 +7,7 @@ If you want to use the 'official' function in eXist-db 6.2.x, have a look at [th
 
 ## Usage
 
-It is assumed that you have already installed eXist-deb and Maven.
+It is assumed that you have already installed eXist-db and Maven.
 
 Download or clone or fork the git repository, which has all the source files.
 In the directory where you have just downloaded the project, do `maven install`. 

@@ -85,7 +85,7 @@ public class FnInvisibleXml extends BasicFunction
       }
       // Generate the Markup Blitz parser for the grammar.
       final Parser parser = Blitz.generate(grammar, options);
-      // Make an IxmlParser function from the Markup Blitz parser. The signature is fn(xs:string) as item()
+      // Make an IxmlParser function from the Markup Blitz parser. The signature is function(xs:string) as item()
       FunctionSignature parserSignature = FunctionDSL.functionSignature(
           new QName("generated-ixml-parser", "https://invisiblexml.org/"),
           "Generated ixml parser, only used internally",
