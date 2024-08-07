@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -58,11 +59,47 @@ public class FnInvisibleXml extends BasicFunction
           "Returns an ixml parser from a grammar. The parser returns an XML representation of the input string as parsed by the provided grammar.",
           new FunctionReturnSequenceType(Type.FUNCTION_REFERENCE, Cardinality.EXACTLY_ONE, "A function that can be used to parse an input string."),
           optParam("grammar", Type.ITEM, "The ixml grammar used to generate the parser"),
-          optParam("options", Type.MAP, "The options for the parser genarator and the parser itself")
+          optParam("options", Type.MAP, "The options for the parser genarator and the parser itself. Supported options are 'fail-on-error', 'verbose', 'trace', 'timing'")
       );
 
   private static final String IXML_GRAMMAR_RESOURCE = "org/exist/xquery/lib/ixml.ixml";
 
+  private static final org.apache.logging.log4j.Logger logger = org.apache.logging.log4j.LogManager.getLogger(FnInvisibleXml.class);
+  private static final Writer erorLogWriter = new Writer() {
+    StringBuffer buffer = new StringBuffer();
+    public int indexOf(char[] cbuf, char c, int off, int len) {
+      int maxPos = off + len;
+      for (int i = off; i < maxPos; i++) if (cbuf[i] == c) return i;
+      return -1;
+    }
+    @Override
+    public void write(char[] cbuf, int off, int len) throws IOException
+    {
+      int eolPos;
+      while ((eolPos = indexOf(cbuf, '\n', off, len)) >= 0) {
+        buffer.append(String.valueOf(cbuf, off, eolPos - off));
+        flush();
+        off = eolPos + 1;
+        len = len - (eolPos - off) - 1;
+      }
+      if (len > 0) {
+        buffer.append(String.valueOf(cbuf, off, len));
+      }
+    }
+    @Override
+    public void flush() throws IOException
+    {
+      if (buffer.length() > 0) {
+        logger.info(buffer);
+        buffer.delete(0, buffer.length()-1);
+      }
+    }
+    @Override
+    public void close() throws IOException
+    {
+      flush();
+    }
+  };
 
   public FnInvisibleXml(final XQueryContext context, final FunctionSignature signature) {
       super(context, signature);
@@ -85,6 +122,7 @@ public class FnInvisibleXml extends BasicFunction
       }
       // Generate the Markup Blitz parser for the grammar.
       final Parser parser = Blitz.generate(grammar, options);
+      parser.setTraceWriter(erorLogWriter);
       // Make an IxmlParser function from the Markup Blitz parser. The signature is function(xs:string) as item()
       FunctionSignature parserSignature = FunctionDSL.functionSignature(
           new QName("generated-ixml-parser", "https://invisiblexml.org/"),
@@ -118,9 +156,21 @@ public class FnInvisibleXml extends BasicFunction
   // Get Markup Blitz options from the $options as map(*) parameter.
   private Blitz.Option[] getOptions(final MapType options) throws XPathException {
       List<Blitz.Option> optionsList = new ArrayList<Blitz.Option>();
-      Sequence failOnError = options.get(new StringValue("fail-on-error"));
-      if (!failOnError.isEmpty() && ((BooleanValue)failOnError.itemAt(0).convertTo(Type.BOOLEAN)).getValue()) {
+      Sequence failOnErrorOption = options.get(new StringValue("fail-on-error"));
+      if (!failOnErrorOption.isEmpty() && ((BooleanValue)failOnErrorOption.itemAt(0).convertTo(Type.BOOLEAN)).getValue()) {
         optionsList.add(Blitz.Option.FAIL_ON_ERROR);
+      }
+      Sequence traceOption = options.get(new StringValue("trace"));
+      if (!traceOption.isEmpty() && ((BooleanValue)traceOption.itemAt(0).convertTo(Type.BOOLEAN)).getValue()) {
+        optionsList.add(Blitz.Option.TRACE);
+      }
+      Sequence verboseOption = options.get(new StringValue("verbose"));
+      if (!verboseOption.isEmpty() && ((BooleanValue)verboseOption.itemAt(0).convertTo(Type.BOOLEAN)).getValue()) {
+        optionsList.add(Blitz.Option.VERBOSE);
+      }
+      Sequence timingOption = options.get(new StringValue("timing"));
+      if (!timingOption.isEmpty() && ((BooleanValue)timingOption.itemAt(0).convertTo(Type.BOOLEAN)).getValue()) {
+        optionsList.add(Blitz.Option.TIMING);
       }
       return optionsList.stream().toArray(Blitz.Option[]::new);
   }
