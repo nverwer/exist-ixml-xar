@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.exist.dom.QName;
@@ -35,11 +36,12 @@ import org.exist.xquery.value.StringValue;
 import org.exist.xquery.value.Type;
 
 import de.bottlecaps.markup.Blitz;
+import de.bottlecaps.markup.blitz.Option;
 import de.bottlecaps.markup.blitz.Parser;
 
 /**
  * Implementation of
- *   fn:invisible-xml(
+ *   invisible-xml(
  *     $grammar  as item()?  := (),
  *     $options  as map(*)?  := {}
  *   )  as fn(xs:string) as item()
@@ -62,10 +64,9 @@ public class FnInvisibleXml extends BasicFunction
           optParam("options", Type.MAP, "The options for the parser genarator and the parser itself. Supported options are 'fail-on-error', 'verbose', 'trace', 'timing'")
       );
 
-  private static final String IXML_GRAMMAR_RESOURCE = "org/exist/xquery/lib/ixml.ixml";
-
+  // Make a logger, and a trace-writer for Markup Blitz.
   private static final org.apache.logging.log4j.Logger logger = org.apache.logging.log4j.LogManager.getLogger(FnInvisibleXml.class);
-  private static final Writer erorLogWriter = new Writer() {
+  private static final Writer logWriter = new Writer() {
     StringBuffer buffer = new StringBuffer();
     public int indexOf(char[] cbuf, char c, int off, int len) {
       int maxPos = off + len;
@@ -91,7 +92,7 @@ public class FnInvisibleXml extends BasicFunction
     {
       if (buffer.length() > 0) {
         logger.info(buffer);
-        buffer.delete(0, buffer.length()-1);
+        buffer.delete(0, buffer.length());
       }
     }
     @Override
@@ -110,19 +111,19 @@ public class FnInvisibleXml extends BasicFunction
       // Handle $grammar and $options parameters.
       final String grammar;
       if (args[0].isEmpty()) {
-        grammar = getIxmlGrammar();
+        grammar = ExtensionFunctionsModule.getIxmlGrammar();
       } else {
         grammar = ((StringValue)args[0].itemAt(0)).getStringValue();
       }
-      final Blitz.Option[] options;
+      final Map<Option, Object> options;
       if (args[1].isEmpty()) {
-        options = new Blitz.Option[0];
+        options = ExtensionFunctionsModule.getOptions(null);
       } else {
-        options = getOptions((MapType) args[1].itemAt(0));
+        options = ExtensionFunctionsModule.getOptions((MapType) args[1].itemAt(0));
       }
       // Generate the Markup Blitz parser for the grammar.
       final Parser parser = Blitz.generate(grammar, options);
-      parser.setTraceWriter(erorLogWriter);
+      parser.setTraceWriter(logWriter);
       // Make an IxmlParser function from the Markup Blitz parser. The signature is function(xs:string) as item()
       FunctionSignature parserSignature = FunctionDSL.functionSignature(
           new QName("generated-ixml-parser", "https://invisiblexml.org/"),
@@ -135,46 +136,6 @@ public class FnInvisibleXml extends BasicFunction
       FunctionCall functionCall = FunctionFactory.wrap(context, ixmlParser);
       return new FunctionReference(functionCall);
   }
-
-  // Read the ixml grammar from a resource.
-  private String getIxmlGrammar() throws XPathException {
-    try (final InputStream ixmlGrammarStream = FnInvisibleXml.class.getClassLoader().getResourceAsStream(IXML_GRAMMAR_RESOURCE)) {
-      if (ixmlGrammarStream == null) {
-          throw new XPathException(ErrorCodes.FODC0002, "The ixml grammar resource cannot be found at "+IXML_GRAMMAR_RESOURCE);
-      }
-      try ( InputStreamReader ixmlGrammarStreamReader = new InputStreamReader(ixmlGrammarStream);
-            BufferedReader reader = new BufferedReader(ixmlGrammarStreamReader)) {
-          return reader.lines().collect(Collectors.joining(System.lineSeparator()));
-      }
-    }
-    catch (IOException e)
-    {
-        throw new XPathException(ErrorCodes.FODC0002, "The ixml grammar resource cannot be opened at "+IXML_GRAMMAR_RESOURCE, e);
-    }
-  }
-
-  // Get Markup Blitz options from the $options as map(*) parameter.
-  private Blitz.Option[] getOptions(final MapType options) throws XPathException {
-      List<Blitz.Option> optionsList = new ArrayList<Blitz.Option>();
-      Sequence failOnErrorOption = options.get(new StringValue("fail-on-error"));
-      if (!failOnErrorOption.isEmpty() && ((BooleanValue)failOnErrorOption.itemAt(0).convertTo(Type.BOOLEAN)).getValue()) {
-        optionsList.add(Blitz.Option.FAIL_ON_ERROR);
-      }
-      Sequence traceOption = options.get(new StringValue("trace"));
-      if (!traceOption.isEmpty() && ((BooleanValue)traceOption.itemAt(0).convertTo(Type.BOOLEAN)).getValue()) {
-        optionsList.add(Blitz.Option.TRACE);
-      }
-      Sequence verboseOption = options.get(new StringValue("verbose"));
-      if (!verboseOption.isEmpty() && ((BooleanValue)verboseOption.itemAt(0).convertTo(Type.BOOLEAN)).getValue()) {
-        optionsList.add(Blitz.Option.VERBOSE);
-      }
-      Sequence timingOption = options.get(new StringValue("timing"));
-      if (!timingOption.isEmpty() && ((BooleanValue)timingOption.itemAt(0).convertTo(Type.BOOLEAN)).getValue()) {
-        optionsList.add(Blitz.Option.TIMING);
-      }
-      return optionsList.stream().toArray(Blitz.Option[]::new);
-  }
-
 
   /**
    * A BasicFunction for the generated ixml parser.

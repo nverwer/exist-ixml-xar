@@ -48,6 +48,11 @@
           <artifactId>markup-blitz</artifactId>
           <version>${markup-blitz-version}</version>
         </dependencySet>
+        <dependencySet>
+          <groupId>${smax.groupId}</groupId>
+          <artifactId>${smax.artifactId}</artifactId>
+          <version>${smax.version}</version>
+        </dependencySet>
     </dependencySets>
 
     <!-- register the Java module to eXist-db -->
