@@ -131,6 +131,8 @@ public class FnTransparentInvisibleXml extends BasicFunction
       } else {
         options = ExtensionFunctionsModule.getOptions((MapType) args[1].itemAt(0));
       }
+      // We cannot serialize errors to SMAX, so we must fail on error.
+      options.put(Option.FAIL_ON_ERROR, true);
       // Generate the Markup Blitz parser for the grammar.
       final Parser parser = Blitz.generate(grammar, options);
       parser.setTraceWriter(logWriter);
