@@ -41,6 +41,7 @@ public class SmaxSerializer implements Serializer<SmaxDocument>
   public void endNonterminal(String name) {
     if (attributeLevel == 0) {
       SmaxElement newElement = newElements.pop().setEndPos(charPointer);
+      // INNER does not include things before and after.
       document.insertMarkup(newElement, Balancing.INNER);
     }
   }
@@ -57,14 +58,17 @@ public class SmaxSerializer implements Serializer<SmaxDocument>
     newElements.peek().setAttribute(attributeName, content.toString());
     content.setLength(0);
     --attributeLevel;
+    attributeName = null;
   }
 
   @Override
   public void terminal(int codepoint) {
     String text = Character.toString(codepoint);
-    charPointer += text.length();
     if (! UnicodeCategory.xmlChar.containsCodepoint(codepoint))
       Errors.D04.thro(text);
+    if (attributeLevel == 0 || (attributeName != null && !attributeName.contains(":"))) {
+      charPointer += text.length();
+    }
     if (attributeLevel > 0) {
       content.append(text);
     }

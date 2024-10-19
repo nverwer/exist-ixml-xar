@@ -177,7 +177,7 @@ public class FnTransparentInvisibleXml extends BasicFunction
       // Create a SMAX document with a <wrapper> root element that will be removed later.
       SmaxDocument smaxDocument = null;
       if (Type.subTypeOf(inputParameter.getType(), Type.STRING)) {
-        // Wrap the string in an element.
+        // Wrap the string in a wrapper element.
         final String inputString = inputParameter.getStringValue();
         final SmaxElement wrapper = new SmaxElement("wrapper").setStartPos(0).setEndPos(inputString.length());
         smaxDocument = new SmaxDocument(wrapper, inputString);
@@ -186,6 +186,7 @@ public class FnTransparentInvisibleXml extends BasicFunction
         if (inputNode instanceof Document || inputNode instanceof DocumentFragment) {
           inputNode = inputNode.getFirstChild();
         }
+        // Wrap the input node in a wrapper element.
         Element inputElement = wrap(inputNode);
         try{
           smaxDocument = DomElement.toSmax(inputElement);
@@ -206,6 +207,7 @@ public class FnTransparentInvisibleXml extends BasicFunction
         throw new XPathException(this, ErrorCodes.ERROR, e);
       }
       DocumentImpl outputDocument = saxAdapter.getDocument();
+      // The document element is the wrapper, which must be removed.
       final NodeList children = outputDocument.getDocumentElement().getChildNodes();
       if(children.getLength() == 0) {
           return Sequence.EMPTY_SEQUENCE;
