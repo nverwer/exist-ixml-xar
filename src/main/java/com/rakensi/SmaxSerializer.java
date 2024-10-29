@@ -31,18 +31,21 @@ public class SmaxSerializer implements Serializer<SmaxDocument>
 
   @Override
   public void startNonterminal(String name) {
-    if (attributeLevel == 0) {
-      SmaxElement newElement = new SmaxElement(name).setStartPos(charPointer);
-      newElements.push(newElement);
-    }
+    SmaxElement newElement = new SmaxElement(name).setStartPos(charPointer);
+    newElements.push(newElement);
   }
 
   @Override
   public void endNonterminal(String name) {
-    if (attributeLevel == 0) {
-      SmaxElement newElement = newElements.pop().setEndPos(charPointer);
+    SmaxElement newElement = newElements.pop().setEndPos(charPointer);
+    if (!newElements.empty()) {
+      // Add this new element as a child to its parent.
+      SmaxElement parent = newElements.peek();
+      parent.appendChild(newElement);
+    } else {
+      // The root element of the serialization is merged into the existing markup.
       // INNER does not include things before and after.
-      document.insertMarkup(newElement, Balancing.INNER);
+      document.mergeMarkup(newElement, Balancing.INNER);
     }
   }
 
