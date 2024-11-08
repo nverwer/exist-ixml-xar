@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.exist-db</groupId>
         <artifactId>exist-apps-parent</artifactId>
-        <version>1.10.0</version>
+        <version>1.12.0</version>
         <relativePath/>
     </parent>
 
@@ -214,7 +214,7 @@
     <repositories>
         <repository>
             <id>exist-db</id>
-            <url>http://repo.evolvedbinary.com/repository/exist-db/</url>
+            <url>https://repo.evolvedbinary.com/repository/exist-db/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -224,7 +224,7 @@
         </repository>
         <repository>
             <id>exist-db-snapshots</id>
-            <url>http://repo.evolvedbinary.com/repository/exist-db-snapshots/</url>
+            <url>https://repo.evolvedbinary.com/repository/exist-db-snapshots/</url>
             <releases>
                 <enabled>false</enabled>
             </releases>
@@ -237,7 +237,7 @@
     <pluginRepositories>
         <pluginRepository>
             <id>clojars.org</id>
-            <url>http://clojars.org/repo</url>
+            <url>https://clojars.org/repo</url>
         </pluginRepository>
     </pluginRepositories>
 </project>
